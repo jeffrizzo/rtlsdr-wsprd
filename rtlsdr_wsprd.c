@@ -230,7 +230,6 @@ static void rtlsdr_callback(unsigned char *samples, uint32_t samples_count, void
 static void *rtlsdr_rx(void *arg) {
     /* Read & blocking call */
     rtlsdr_read_async(rtl_device, rtlsdr_callback, NULL, 0, DEFAULT_BUF_LENGTH);
-    exit(0);
     return 0;
 }
 
@@ -760,9 +759,11 @@ int main(int argc, char** argv) {
         nLoop++;
     }
 
+    rx_state.exit_flag = true;
     /* Stop the RX and free the blocking function */
     rtlsdr_cancel_async(rtl_device);
 
+    pthread_join(dongle.thread, NULL);
     /* Close the RTL device */
     rtlsdr_close(rtl_device);
 
@@ -773,7 +774,6 @@ int main(int argc, char** argv) {
     pthread_cond_signal(&dec.ready_cond);
     pthread_mutex_unlock(&dec.ready_mutex);
     pthread_join(dec.thread, NULL);
-    pthread_join(dongle.thread, NULL);
 
     /* Destroy the lock/cond/thread */
     pthread_rwlock_destroy(&dec.rw);
